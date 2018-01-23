@@ -2,8 +2,8 @@
 Training module
 """
 
-import pandas as pd  # data analysis toolkit - create, read, update, delete datasets
-import numpy as np  # matrix math
+import pandas as pd     # data analysis toolkit - create, read, update, delete datasets
+import numpy as np      # matrix math
 from sklearn.model_selection import train_test_split  # to split out training and testing data
 # keras is a high level wrapper on top of tensorflow (machine learning library)
 # The Sequential container is a linear stack of layers
@@ -13,7 +13,7 @@ from keras.optimizers import Adam
 # to save our model periodically as checkpoints for loading later
 from keras.callbacks import ModelCheckpoint
 # what types of layers do we want our model to have?
-from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten
+from keras.layers import Lambda, Conv2D, Dropout, Dense, Flatten
 # helper class to define input shape and generate training images given image paths & steering angles
 from utils import INPUT_SHAPE, batch_generator
 # for command line arguments
@@ -40,7 +40,7 @@ def load_data(args):
     y = data_df['steering'].values
 
     # now we can split the data into a training (80), testing(20), and validation set
-    # thanks scikit learn
+    # thanks scikit-learn
     X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=args.test_size, random_state=0)
 
     return X_train, X_valid, y_train, y_valid
@@ -66,11 +66,10 @@ def build_model(args):
     ELU(Exponential linear unit) function takes care of the Vanishing gradient problem.
     """
     model = Sequential()
-    model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))  # image normalization layer (to avoid
-    # saturation and make the gradients work better)
-    model.add(Conv2D(24, (5, 5), activation='elu', subsample=(2, 2)))
-    model.add(Conv2D(36, (5, 5), activation='elu', subsample=(2, 2)))
-    model.add(Conv2D(48, (5, 5), activation='elu', subsample=(2, 2)))
+    model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))
+    model.add(Conv2D(24, (5, 5), activation='elu', strides=(2, 2)))
+    model.add(Conv2D(36, (5, 5), activation='elu', strides=(2, 2)))
+    model.add(Conv2D(48, (5, 5), activation='elu', strides=(2, 2)))
     model.add(Conv2D(64, (3, 3), activation='elu'))
     model.add(Conv2D(64, (3, 3), activation='elu'))
     model.add(Dropout(args.keep_prob))
@@ -114,13 +113,13 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     # The generator is run in parallel to the model, for efficiency.
     # For instance, this allows you to do real-time data augmentation on images on CPU in
     # parallel to training your model on GPU.
-    # so we reshape our data into their appropriate batches and train our model simulatenously
+    # so we reshape our data into their appropriate batches and train our model simultaneously
     model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True),
-                        args.samples_per_epoch,
+                        args.steps_per_epoch / args.batch_size,
                         args.nb_epoch,
-                        max_q_size=1,
+                        max_queue_size=1,
                         validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False),
-                        nb_val_samples=len(X_valid),
+                        validation_steps=(len(X_valid) / args.batch_size),
                         callbacks=[checkpoint],
                         verbose=1)
 
@@ -138,12 +137,13 @@ def main():
     """
     Load train/validation data set and train the model
     """
+    # The argparse module makes it easy to write user-friendly command-line interfaces.
     parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
     parser.add_argument('-d', help='data directory', dest='data_dir', type=str, default='data')
     parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.2)
     parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.5)
     parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=10)
-    parser.add_argument('-s', help='samples per epoch', dest='samples_per_epoch', type=int, default=20000)
+    parser.add_argument('-s', help='steps per epoch', dest='steps_per_epoch', type=int, default=20000)
     parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=40)
     parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='true')
     parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
