@@ -16,8 +16,6 @@ import shutil
 import numpy as np
 # real-time server
 import socketio
-# concurrent networking
-import eventlet
 # web server gateway interface
 import eventlet.wsgi
 # image manipulation
@@ -62,9 +60,9 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         image = Image.open(BytesIO(base64.b64decode(data["image"])))
         try:
-            image = np.asarray(image)  # from PIL image to numpy array
-            image = utils.preprocess(image)  # apply the preprocessing
-            image = np.array([image])  # the model expects 4D array
+            image = np.asarray(image)           # from PIL image to numpy array
+            image = utils.preprocess(image)     # apply the preprocessing
+            image = np.array([image])           # the model expects 4D array
 
             # predict the steering angle for the image
             steering_angle = float(model.predict(image, batch_size=1))
@@ -89,7 +87,6 @@ def telemetry(sid, data):
             image_filename = os.path.join(args.image_folder, timestamp)
             image.save('{}.jpg'.format(image_filename))
     else:
-
         sio.emit('manual', data={}, skip_sid=True)
 
 
@@ -114,6 +111,8 @@ if __name__ == '__main__':
     parser.add_argument(
         'model',
         type=str,
+        nargs='?',
+        default=os.path.join(os.getcwd(), 'model-010.h5'),
         help='Path to model h5 file. Model should be on the same path.'
     )
     parser.add_argument(

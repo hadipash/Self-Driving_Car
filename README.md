@@ -1,8 +1,8 @@
 # Self-Driving Car
 
-##### Change log:
--Updated to Keras2 API<br/>
--Updated to support new numpy versions<br/>
+#### Change log:
+- Updated to Keras2 API<br/>
+- Updated to support new numpy versions<br/>
 
 <br/>Credit:<br/>
 Siraj Raval:
